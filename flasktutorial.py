@@ -1,15 +1,35 @@
+
+from flask import Flask, render_template, request
+
 from dotenv import load_dotenv
 import os
 import base64
 from requests import post, get
 import json
 
-load_dotenv()
+app = Flask(__name__)
 
-client_id = os.getenv("CLIENT_ID")
-client_secret = os.getenv("CLIENT_SECRET")
 
-def get_token(): 
+@app.route("/", methods=["POST", "GET"])
+def home():
+    return render_template("index.html")
+
+@app.route("/search", methods=["POST", "GET"])
+def search():
+    client_id = os.getenv("CLIENT_ID")
+    client_secret = os.getenv("CLIENT_SECRET")
+    artist_name = request.form.get('artist_name')
+    token = get_token(client_id=client_id, client_secret=client_secret)
+    result = search_for_artist(token, artist_name)
+
+    if result:
+        artist_id = result['id']
+        songs = get_songs_by_artist(token, artist_id)
+        return render_template('result.html', songs=songs)
+
+    return render_template('no_result.html')
+    
+def get_token(client_id, client_secret): 
     auth_string = client_id + ":" + client_secret
     auth_bytes = auth_string.encode("utf-8")
     auth_base64 = str(base64.b64encode(auth_bytes), "utf-8")
@@ -25,14 +45,13 @@ def get_token():
     token = json_result["access_token"]
     return token
 
-
 def get_auth_header(token):
     return {"Authorization": "Bearer " + token}
 
 def search_for_artist(token, artist_name): 
     url = "https://api.spotify.com/v1/search"
     headers = get_auth_header(token)
-    query = f"?q={artist_name}&type=artist&limit=1"
+    query = "?q={}&type=artist&limit=1".format(artist_name)
     
     query_url = url + query
 
@@ -46,23 +65,12 @@ def search_for_artist(token, artist_name):
     return json_result[0]
 
 def get_songs_by_artist(token, artist_id):
-    url = f"https://api.spotify.com/v1/artists/{artist_id}/top-tracks?country=US"
+    url = "https://api.spotify.com/v1/artists/{}/top-tracks?country=US".format(artist_id)
     headers = get_auth_header(token)
     result = get(url, headers=headers)
     json_result = json.loads(result.content)["tracks"]
     return json_result
 
-token = get_token()
-user_input = input("Enter an artist's name. \n")
-
-result = search_for_artist(token, user_input)
-artist_id = result["id"]
-songs = get_songs_by_artist(token, artist_id)
-
-
-print("The number next to it is the popularity rating")
-print("Popularity is on a scale of 0 - 100, 100 being the most popular")
-print("")
-for idx, song in enumerate(songs):
-    print(f"{idx + 1}. {song['name']} -> {song['popularity']}")
-
+    
+if __name__ == "__main__":
+    app.run(debug=True)

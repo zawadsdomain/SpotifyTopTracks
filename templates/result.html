@@ -1,0 +1,23 @@
+<!-- templates/result.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+</head>
+<body>
+    <h1>Search Results</h1>
+    <a href="{{ url_for('home') }}"><button type="button">Return to Home</button></a>
+    <h6>Popularity Index is majorly defined as recent stream count</h6>
+    <ol>
+        {% for song in songs %}
+            <li>{{ song['name'] }} -> {{ song['popularity'] }}</li>
+            <img src="{{ song['album']['images'][0]['url'] }}" alt="Album Cover" width = 100px height = 100px>
+        {% endfor %}
+    </ol>
+
+    <a href="{{ url_for('home') }}"><button type="button">Return to Home</button></a>
+</body>
+</html>
